@@ -1,0 +1,2285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraViews — Transform Every Room Into a Window to the World</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Tenor+Sans&family=Noto+Sans+Arabic:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #080808;
+    --deep: #0d0d0d;
+    --card: #111111;
+    --border: #1e1e1e;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --gold-dim: #7a6230;
+    --white: #f5f0e8;
+    --white-dim: #a09880;
+    --text: #d4cdc0;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Tenor Sans', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s, width 0.3s, height 0.3s, opacity 0.3s;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s ease-out, width 0.3s, height 0.3s;
+  }
+
+  /* Navigation */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 60px;
+    background: linear-gradient(to bottom, rgba(8,8,8,0.95), transparent);
+    transition: padding 0.4s;
+  }
+  nav.scrolled {
+    padding: 18px 60px;
+    background: rgba(8,8,8,0.97);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    color: var(--white);
+    text-decoration: none;
+  }
+  .logo span { color: var(--gold); }
+  .nav-links {
+    display: flex;
+    gap: 40px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--white-dim);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: var(--gold); }
+
+  .lang-switcher {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .lang-btn {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--white-dim);
+    background: none;
+    border: none;
+    cursor: none;
+    transition: color 0.3s;
+    font-family: 'Tenor Sans', sans-serif;
+    padding: 4px 8px;
+  }
+  .lang-btn:hover, .lang-btn.active { color: var(--gold); }
+  .lang-btn.active { border-bottom: 1px solid var(--gold); }
+  .lang-sep { color: var(--border); font-size: 10px; }
+
+  /* Hero */
+  .hero {
+    position: relative;
+    height: 100vh;
+    min-height: 700px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 40px;
+    padding: 100px 60px 60px;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 80% 60% at 50% 40%, rgba(201,168,76,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,168,76,0.04) 0%, transparent 60%),
+      linear-gradient(180deg, #080808 0%, #0a0806 50%, #080808 100%);
+  }
+
+  /* Animated window in hero */
+  .hero-window {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 500px;
+    opacity: 0;
+    animation: windowReveal 1.5s ease forwards 0.8s;
+  }
+
+  @keyframes windowReveal {
+    from { opacity: 0; transform: translateY(-45%); }
+    to { opacity: 1; transform: translateY(-50%); }
+  }
+
+  .window-frame {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: #0a0a0a;
+    border: 2px solid var(--gold-dim);
+    box-shadow: 
+      0 0 0 8px #0d0d0d,
+      0 0 0 9px #1a1a1a,
+      0 40px 120px rgba(0,0,0,0.8),
+      inset 0 0 30px rgba(0,0,0,0.5);
+  }
+
+  .window-inner {
+    position: absolute;
+    inset: 16px;
+    overflow: hidden;
+    background: linear-gradient(
+      180deg,
+      #0a1628 0%,
+      #0d1f3c 20%,
+      #1a3a6b 45%,
+      #2d6a9f 60%,
+      #3d8bc4 70%,
+      #1a4060 80%,
+      #0d2040 100%
+    );
+  }
+
+  /* Animated sky in window */
+  .window-sky {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      #060d1a 0%,
+      #0d1f3c 30%,
+      #1a3a6b 55%,
+      #2d5a8f 70%,
+      #1a3a5c 85%,
+      #0d1f3c 100%
+    );
+    animation: skyShift 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes skyShift {
+    0% { filter: brightness(0.8) hue-rotate(0deg); }
+    100% { filter: brightness(1.1) hue-rotate(8deg); }
+  }
+
+  .window-stars {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      radial-gradient(1px 1px at 20% 15%, rgba(255,255,255,0.8) 0%, transparent 100%),
+      radial-gradient(1px 1px at 40% 8%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 20%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 12%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 35%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 75% 30%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(2px 2px at 50% 5%, rgba(255,255,240,0.9) 0%, transparent 100%);
+    animation: starTwinkle 4s ease-in-out infinite alternate;
+  }
+
+  @keyframes starTwinkle {
+    0% { opacity: 0.7; }
+    100% { opacity: 1; }
+  }
+
+  /* Haram silhouette */
+  .window-haram {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    height: 55%;
+  }
+
+  .haram-glow {
+    position: absolute;
+    bottom: 30%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 60px;
+    background: radial-gradient(ellipse, rgba(255,220,100,0.3) 0%, transparent 70%);
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    0% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+    100% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+  }
+
+  .haram-svg {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    width: 100%;
+  }
+
+  /* Light beams from minarets */
+  .light-beam {
+    position: absolute;
+    bottom: 35%;
+    width: 1px;
+    height: 80px;
+    background: linear-gradient(to top, rgba(255,220,100,0.6), transparent);
+    animation: beamPulse 2s ease-in-out infinite alternate;
+  }
+  .light-beam:nth-child(1) { left: 22%; animation-delay: 0s; }
+  .light-beam:nth-child(2) { left: 50%; animation-delay: 0.5s; }
+  .light-beam:nth-child(3) { right: 22%; animation-delay: 1s; }
+
+  @keyframes beamPulse {
+    0% { opacity: 0.4; height: 60px; }
+    100% { opacity: 0.8; height: 90px; }
+  }
+
+  /* Reflection on glass */
+  .window-glass {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255,255,255,0.03) 0%,
+      transparent 50%,
+      rgba(255,255,255,0.01) 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Window frame details */
+  .frame-corner {
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--gold);
+    border-style: solid;
+  }
+  .frame-corner.tl { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+  .frame-corner.tr { top: -2px; right: -2px; border-width: 2px 2px 0 0; }
+  .frame-corner.bl { bottom: -2px; left: -2px; border-width: 0 0 2px 2px; }
+  .frame-corner.br { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+  .window-label {
+    position: absolute;
+    bottom: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* Shutter panels */
+  .shutter-left, .shutter-right {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1208 0%, #100c05 100%);
+    border: 1px solid #2a1f0a;
+    z-index: 10;
+    transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .shutter-left {
+    left: 0;
+    transform-origin: left center;
+    border-right: none;
+  }
+  .shutter-right {
+    right: 0;
+    transform-origin: right center;
+    border-left: none;
+  }
+  .shutter-left.open { transform: perspective(400px) rotateY(-85deg); }
+  .shutter-right.open { transform: perspective(400px) rotateY(85deg); }
+
+  .shutter-slats {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    padding: 8px;
+  }
+  .slat {
+    height: 1px;
+    background: rgba(201,168,76,0.15);
+  }
+
+  /* Hero content */
+  .hero-content {
+    position: relative;
+    z-index: 10;
+    max-width: 480px;
+    opacity: 0;
+    animation: heroIn 1.2s ease forwards 0.3s;
+  }
+
+  @keyframes heroIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(52px, 6vw, 80px);
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    margin-bottom: 28px;
+    color: var(--white);
+  }
+  .hero-title em {
+    font-style: italic;
+    color: var(--gold-light);
+  }
+
+  .hero-sub {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--white-dim);
+    margin-bottom: 48px;
+    max-width: 400px;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 36px;
+    background: var(--gold);
+    color: var(--black);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    font-family: 'Tenor Sans', sans-serif;
+    transition: background 0.3s, transform 0.3s;
+    cursor: none;
+  }
+  .btn-primary:hover {
+    background: var(--gold-light);
+    transform: translateX(4px);
+  }
+
+  .btn-secondary {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--white-dim);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.3s;
+    cursor: none;
+  }
+  .btn-secondary:hover { color: var(--gold); }
+  .btn-secondary::after {
+    content: '→';
+    transition: transform 0.3s;
+  }
+  .btn-secondary:hover::after { transform: translateX(4px); }
+
+  /* Scroll indicator */
+  .scroll-indicator {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeIn 1s forwards 2s;
+  }
+  .scroll-line {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollDown 1.5s ease-in-out infinite;
+  }
+  @keyframes scrollDown {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    51% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+  .scroll-text {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .stat-item {
+    padding: 40px 48px;
+    border-right: 1px solid var(--border);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s, transform 0.6s;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-item.visible { opacity: 1; transform: translateY(0); }
+  .stat-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--white-dim);
+  }
+
+  /* Sections */
+  section { padding: 120px 60px; }
+
+  .section-eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .section-eyebrow::before {
+    content: '';
+    display: block;
+    width: 30px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 4vw, 56px);
+    font-weight: 300;
+    line-height: 1.1;
+    margin-bottom: 24px;
+    color: var(--white);
+  }
+  .section-title em { font-style: italic; color: var(--gold-light); }
+
+  .section-body {
+    font-size: 15px;
+    line-height: 1.9;
+    color: var(--white-dim);
+    max-width: 560px;
+  }
+
+  /* Problem section */
+  .problem-section {
+    background: var(--deep);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .problem-visual {
+    position: relative;
+    height: 500px;
+  }
+
+  .building-grid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 3px;
+    opacity: 0.6;
+  }
+
+  .building-cell {
+    background: #111;
+    border: 1px solid #1a1a1a;
+    transition: background 0.3s;
+  }
+  .building-cell.lit { background: #1a1a0d; }
+  .building-cell.aura {
+    background: linear-gradient(135deg, #0d1f3c, #1a3a6b);
+    border-color: var(--gold-dim);
+    box-shadow: 0 0 8px rgba(201,168,76,0.2);
+    animation: auraPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes auraPulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(201,168,76,0.2); }
+    50% { box-shadow: 0 0 20px rgba(201,168,76,0.4); }
+  }
+
+  .problem-tag {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* Solution section */
+  .solution-section {
+    background: var(--black);
+  }
+
+  .solution-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 100px;
+    align-items: center;
+    margin-top: 80px;
+  }
+
+  .product-showcase {
+    position: relative;
+    height: 580px;
+  }
+
+  .showcase-window {
+    position: absolute;
+    width: 340px;
+    height: 440px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #0a0a0a;
+    border: 3px solid var(--gold-dim);
+    box-shadow: 
+      0 0 0 12px #0d0d0d,
+      0 0 0 13px #181818,
+      0 60px 140px rgba(0,0,0,0.9),
+      0 0 80px rgba(201,168,76,0.08);
+  }
+
+  .showcase-inner {
+    position: absolute;
+    inset: 20px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #0a1628 0%, #1a3a6b 50%, #0d2040 100%);
+    animation: viewShift 6s ease-in-out infinite alternate;
+  }
+
+  @keyframes viewShift {
+    0% { filter: brightness(0.9) saturate(0.9); }
+    100% { filter: brightness(1.1) saturate(1.1); }
+  }
+
+  .showcase-horizon {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    height: 45%;
+    background: linear-gradient(180deg, #0d1f3c 0%, #060d1a 100%);
+  }
+
+  .showcase-glow {
+    position: absolute;
+    bottom: 42%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 40px;
+    background: radial-gradient(ellipse, rgba(255,200,80,0.4) 0%, transparent 70%);
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  .dimension-lines {
+    position: absolute;
+  }
+  .dim-h {
+    position: absolute;
+    bottom: -50px;
+    left: 0; right: 0;
+    height: 1px;
+    background: var(--gold-dim);
+  }
+  .dim-h::before, .dim-h::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    width: 1px;
+    height: 9px;
+    background: var(--gold-dim);
+  }
+  .dim-h::before { left: 0; }
+  .dim-h::after { right: 0; }
+  .dim-label {
+    position: absolute;
+    bottom: -70px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--gold-dim);
+    white-space: nowrap;
+  }
+
+  .feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .feature-item {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    opacity: 0;
+    transform: translateX(20px);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+  .feature-item.visible { opacity: 1; transform: translateX(0); }
+
+  .feature-icon {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--gold-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--gold);
+    font-size: 16px;
+  }
+
+  .feature-title {
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+
+  .feature-desc {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--white-dim);
+  }
+
+  /* Science section */
+  .science-section {
+    background: var(--deep);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .science-section::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('images/3.jpg');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .science-section > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .science-section::before {
+    content: '';
+    position: absolute;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(201,168,76,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .science-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 100px;
+    align-items: center;
+    margin-top: 80px;
+  }
+
+  .stat-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    padding: 40px 32px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.6s, transform 0.6s;
+    transform: translateY(20px);
+  }
+  .stat-card.visible { opacity: 1; transform: translateY(0); }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(to right, var(--gold), transparent);
+  }
+
+  .stat-card-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 56px;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .stat-card-unit {
+    font-size: 18px;
+    color: var(--gold-dim);
+  }
+
+  .stat-card-label {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--white-dim);
+    line-height: 1.5;
+  }
+
+  .stanford-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border: 1px solid var(--border);
+    margin-top: 32px;
+  }
+
+  .stanford-dot {
+    width: 8px; height: 8px;
+    background: #8c1515;
+    border-radius: 50%;
+  }
+
+  .stanford-text {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--white-dim);
+  }
+
+  .quote-block {
+    padding: 32px;
+    border-left: 2px solid var(--gold);
+    background: rgba(201,168,76,0.03);
+    margin-top: 32px;
+  }
+
+  .quote-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--white);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .quote-attr {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+  }
+
+  /* Products section */
+  .products-section {
+    background: var(--black);
+  }
+
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 80px;
+  }
+
+  .product-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s, transform 0.6s, border-color 0.3s;
+  }
+  .product-card.visible { opacity: 1; transform: translateY(0); }
+  .product-card:hover { border-color: var(--gold-dim); }
+
+  .product-card.featured {
+    border-color: var(--gold-dim);
+    background: linear-gradient(135deg, #111108 0%, #111 100%);
+  }
+
+  .product-card.featured::before {
+    content: 'Most Popular';
+    position: absolute;
+    top: 0; right: 0;
+    background: var(--gold);
+    color: var(--black);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+  }
+
+  .product-icon {
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    margin-bottom: 24px;
+    font-size: 20px;
+  }
+
+  .product-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+
+  .product-desc {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--white-dim);
+    margin-bottom: 32px;
+  }
+
+  .product-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 40px;
+    font-weight: 300;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  .product-price-sub {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--white-dim);
+    margin-bottom: 32px;
+  }
+
+  .product-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+
+  .product-features li {
+    font-size: 12px;
+    color: var(--white-dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .product-features li::before {
+    content: '—';
+    color: var(--gold-dim);
+    font-size: 10px;
+  }
+
+  /* Pricing section */
+  .pricing-section {
+    background: var(--deep);
+  }
+
+  .pricing-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    margin-top: 80px;
+    align-items: start;
+  }
+
+  .pricing-card {
+    border: 1px solid var(--border);
+    padding: 48px;
+    position: relative;
+  }
+
+  .pricing-card.highlighted {
+    border-color: var(--gold-dim);
+    background: linear-gradient(135deg, #0d0d08, #111);
+  }
+
+  .pricing-tag {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+
+  .pricing-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 300;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+
+  .pricing-amount {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 64px;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+    margin: 24px 0 8px;
+  }
+
+  .pricing-period {
+    font-size: 13px;
+    color: var(--white-dim);
+    margin-bottom: 32px;
+  }
+
+  .pricing-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 32px 0;
+  }
+
+  .pricing-items {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 40px;
+  }
+
+  .pricing-items li {
+    font-size: 13px;
+    color: var(--white-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .pricing-items li:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .pricing-items li span:last-child {
+    color: var(--white);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+
+  .roi-block {
+    background: rgba(201,168,76,0.04);
+    border: 1px solid var(--gold-dim);
+    padding: 32px;
+    margin-top: 40px;
+  }
+
+  .roi-title {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+
+  .roi-calc {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .roi-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--white-dim);
+  }
+
+  .roi-line.total {
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    color: var(--gold);
+    font-size: 14px;
+  }
+
+  /* Contact section */
+  .contact-section {
+    background: var(--black);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 100px;
+    align-items: start;
+  }
+
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-top: 48px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--white-dim);
+  }
+
+  .form-input, .form-select, .form-textarea {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--white);
+    padding: 14px 18px;
+    font-size: 13px;
+    font-family: 'Tenor Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.3s;
+    cursor: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--gold-dim);
+  }
+  .form-select { appearance: none; }
+  .form-textarea { resize: none; height: 120px; }
+
+  .form-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 48px;
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-family: 'Tenor Sans', sans-serif;
+    cursor: none;
+    transition: background 0.3s, color 0.3s;
+    align-self: flex-start;
+  }
+  .form-submit:hover {
+    background: var(--gold);
+    color: var(--black);
+  }
+
+  .contact-info {
+    padding-top: 48px;
+  }
+
+  .contact-detail {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .contact-detail-label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 8px;
+  }
+
+  .contact-detail-value {
+    font-size: 15px;
+    color: var(--white);
+  }
+
+  /* Footer */
+  footer {
+    background: var(--deep);
+    border-top: 1px solid var(--border);
+    padding: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    color: var(--white-dim);
+  }
+  .footer-logo span { color: var(--gold); }
+
+  .footer-copy {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--white-dim);
+    opacity: 0.5;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+  .footer-links a {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--white-dim);
+    text-decoration: none;
+    transition: color 0.3s;
+    cursor: none;
+  }
+  .footer-links a:hover { color: var(--gold); }
+
+  /* Translations hidden */
+  .lang-content { display: none; }
+  .lang-content.active { display: block; }
+  .lang-en { display: block; }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .fade-up {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s, transform 0.7s;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  /* Arabic RTL */
+  .rtl { direction: rtl; text-align: right; }
+  .rtl .section-eyebrow { flex-direction: row-reverse; }
+  .rtl .section-eyebrow::before { display: none; }
+  .rtl .section-eyebrow::after {
+    content: '';
+    display: block;
+    width: 30px;
+    height: 1px;
+    background: var(--gold);
+  }
+  .rtl .hero-eyebrow { flex-direction: row-reverse; }
+  .rtl .hero-eyebrow::before { display: none; }
+  .rtl .hero-eyebrow::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: var(--gold);
+  }
+  .rtl .feature-item { flex-direction: row-reverse; }
+  .rtl .stanford-badge { flex-direction: row-reverse; }
+  .rtl .btn-secondary { flex-direction: row-reverse; }
+  .rtl .btn-secondary::after { content: '←'; }
+  .rtl .quote-block { border-left: none; border-right: 2px solid var(--gold); }
+  .rtl .stat-card::after { background: linear-gradient(to left, var(--gold), transparent); }
+  .rtl .pricing-items li { flex-direction: row-reverse; }
+  .rtl .roi-line { flex-direction: row-reverse; }
+  .rtl .product-features li { flex-direction: row-reverse; }
+  .rtl .product-features li::before { display: none; }
+  .rtl .product-features li::after { content: '—'; color: var(--gold-dim); font-size: 10px; }
+  .noto-arabic { font-family: 'Noto Sans Arabic', sans-serif; }
+
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Navigation -->
+<nav id="mainNav">
+  <a href="#" class="logo">Aura<span>Views</span></a>
+  <ul class="nav-links">
+    <li><a href="#solution" data-i18n="nav.solution">Solution</a></li>
+    <li><a href="#science" data-i18n="nav.science">Science</a></li>
+    <li><a href="#products" data-i18n="nav.products">Products</a></li>
+    <li><a href="#pricing" data-i18n="nav.pricing">Pricing</a></li>
+    <li><a href="#contact" data-i18n="nav.contact">Contact</a></li>
+  </ul>
+  <div class="lang-switcher">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn" onclick="setLang('de')">DE</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+  <div class="hero-bg"></div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow" data-i18n="hero.eyebrow">Architectural Wellness Technology</div>
+    <h1 class="hero-title" data-i18n-html="hero.title">Every Room Deserves a <em>Window to the World</em></h1>
+    <p class="hero-sub" data-i18n="hero.sub">Commercial-grade digital windows that transform windowless hotel rooms into scientifically-proven wellness experiences. Backed by Stanford University research.</p>
+    <div class="hero-cta">
+      <a href="#contact" class="btn-primary" data-i18n="hero.cta1">Request Partnership</a>
+      <a href="#solution" class="btn-secondary" data-i18n="hero.cta2">Discover More</a>
+    </div>
+  </div>
+
+  <!-- Animated Window -->
+  <div class="hero-window">
+    <div class="window-frame">
+      <div class="frame-corner tl"></div>
+      <div class="frame-corner tr"></div>
+      <div class="frame-corner bl"></div>
+      <div class="frame-corner br"></div>
+      <div class="window-inner">
+        <img src="images/1.jpg" alt="View of Masjid al-Haram through AuraViews window" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
+        <div class="window-glass"></div>
+      </div>
+
+      <!-- Shutters -->
+      <div class="shutter-left" id="shutterLeft">
+        <div class="shutter-slats">
+          <div class="slat"></div><div class="slat"></div><div class="slat"></div>
+          <div class="slat"></div><div class="slat"></div><div class="slat"></div>
+          <div class="slat"></div><div class="slat"></div><div class="slat"></div>
+          <div class="slat"></div><div class="slat"></div><div class="slat"></div>
+        </div>
+      </div>
+      <div class="shutter-right" id="shutterRight">
+        <div class="shutter-slats">
+          <div class="slat"></div><div class="slat"></div><div class="slat"></div>
+          <div class="slat"></div><div class="slat"></div><div class="slat"></div>
+          <div class="slat"></div><div class="slat"></div><div class="slat"></div>
+          <div class="slat"></div><div class="slat"></div><div class="slat"></div>
+        </div>
+      </div>
+    </div>
+    <div class="window-label" data-i18n="hero.windowLabel">Masjid al-Haram — Makkah, 03:42</div>
+  </div>
+
+  <div class="scroll-indicator">
+    <div class="scroll-line"></div>
+    <span class="scroll-text" data-i18n="hero.scroll">Scroll</span>
+  </div>
+</section>
+
+<!-- Stats Bar -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-number">300K<span style="font-size:24px;color:var(--gold-dim)">+</span></div>
+    <div class="stat-label" data-i18n="stats.rooms">Hotel Rooms — Target Market</div>
+  </div>
+  <div class="stat-item" style="transition-delay:0.1s">
+    <div class="stat-number">46<span style="font-size:24px;color:var(--gold-dim)">%</span></div>
+    <div class="stat-label" data-i18n="stats.stress">Stress Reduction — Stanford Study</div>
+  </div>
+  <div class="stat-item" style="transition-delay:0.2s">
+    <div class="stat-number">$2.5K</div>
+    <div class="stat-label" data-i18n="stats.price">Starting Price Per Unit</div>
+  </div>
+  <div class="stat-item" style="transition-delay:0.3s">
+    <div class="stat-number">8K</div>
+    <div class="stat-label" data-i18n="stats.content">Cinematic Content Resolution</div>
+  </div>
+</div>
+
+<!-- Problem Section -->
+<section class="problem-section" id="problem">
+  <div class="problem-visual">
+    <div class="building-grid" id="buildingGrid"></div>
+    <div class="problem-tag" data-i18n="problem.tag">Most hotel rooms have no view</div>
+  </div>
+  <div>
+    <div class="section-eyebrow" data-i18n="problem.eyebrow">The Problem</div>
+    <h2 class="section-title fade-up" data-i18n-html="problem.title">Millions of rooms.<br><em>Zero connection</em> to the outside world.</h2>
+    <p class="section-body fade-up" data-i18n="problem.body">Hotels in Makkah, Madinah, and dense urban centres build vertically. The result: thousands of interior rooms facing concrete walls or internal corridors. Guests paying premium rates deserve better. Architecture has no solution. AuraViews does.</p>
+  </div>
+</section>
+
+<!-- Solution Section -->
+<section class="solution-section" id="solution">
+  <div class="section-eyebrow fade-up" data-i18n="solution.eyebrow">The Solution</div>
+  <h2 class="section-title fade-up" data-i18n-html="solution.title">Not a screen.<br>A <em>window</em>.</h2>
+
+  <div class="solution-grid">
+    <div class="product-showcase">
+      <div class="showcase-window">
+        <div class="showcase-inner">
+          <img src="images/2.jpg" alt="Office with AuraViews digital window showing NYC skyline" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
+          <div class="window-glass"></div>
+        </div>
+        <div style="position:absolute;inset:0;border:1px solid rgba(201,168,76,0.2);pointer-events:none"></div>
+      </div>
+      <div class="dim-h" style="position:absolute;bottom:50px;left:50%;transform:translateX(-50%);width:340px">
+        <span class="dim-label">65" Samsung QMC Commercial · 24/7 Rated</span>
+      </div>
+    </div>
+
+    <div class="feature-list">
+      <div class="feature-item">
+        <div class="feature-icon">◈</div>
+        <div>
+          <div class="feature-title" data-i18n="features.depth.title">Architectural Depth Illusion</div>
+          <div class="feature-desc" data-i18n="features.depth.desc">A recessed frame with architectural glass creates the visual depth your brain expects from a real window. The air gap between glass and screen is the secret.</div>
+        </div>
+      </div>
+      <div class="feature-item" style="transition-delay:0.1s">
+        <div class="feature-icon">◉</div>
+        <div>
+          <div class="feature-title" data-i18n="features.sync.title">Circadian Synchronisation</div>
+          <div class="feature-desc" data-i18n="features.sync.desc">Content is synchronized to your local time of day. Dawn at Fajr. Bright afternoon at Dhuhr. Golden hour at Maghrib. Your body knows the difference.</div>
+        </div>
+      </div>
+      <div class="feature-item" style="transition-delay:0.2s">
+        <div class="feature-icon">◎</div>
+        <div>
+          <div class="feature-title" data-i18n="features.shutters.title">Signature Shutter Experience</div>
+          <div class="feature-desc" data-i18n="features.shutters.desc">Custom panels in wood or aluminium open to reveal the view and trigger ambient audio. A physical ritual that primes the mind before the view is even seen.</div>
+        </div>
+      </div>
+      <div class="feature-item" style="transition-delay:0.3s">
+        <div class="feature-icon">◐</div>
+        <div>
+          <div class="feature-title" data-i18n="features.manage.title">Smart Central Management</div>
+          <div class="feature-desc" data-i18n="features.manage.desc">Samsung MagicINFO manages every screen in every room from a single dashboard. Push updates, monitor status, calibrate colour across 100 rooms in one click.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Science Section -->
+<section class="science-section" id="science">
+  <div class="section-eyebrow fade-up" data-i18n="science.eyebrow">The Science</div>
+  <h2 class="section-title fade-up" data-i18n-html="science.title">Your brain cannot tell<br>the <em>difference</em>.</h2>
+
+  <div class="science-layout">
+    <div>
+      <p class="section-body fade-up" data-i18n="science.body">The Zeitzer Circadian Research Lab at Stanford University conducted physiological studies measuring EEG, heart rate, blood pressure, and electrodermal activity while participants viewed AuraViews-style digital windows in windowless rooms.</p>
+
+      <div class="stanford-badge fade-up" style="transition-delay:0.2s">
+        <div class="stanford-dot"></div>
+        <span class="stanford-text" data-i18n="science.badge">Stanford University · Zeitzer Circadian Research Lab · Ongoing Study</span>
+      </div>
+
+      <div class="quote-block fade-up" style="transition-delay:0.3s">
+        <p class="quote-text" data-i18n="science.quote">"You look at the scene. You actually feel better. And it's not just a subjective thing. We're seeing changes in your biology that confirm both how you're feeling and how your body is responding."</p>
+        <div class="quote-attr" data-i18n="science.quoteAttr">Dr. Jamie Zeitzer, Ph.D. — Associate Professor of Psychiatry, Stanford University</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-card-number">46<span class="stat-card-unit">%</span></div>
+          <div class="stat-card-label" data-i18n="science.stat1">Reduction in electrodermal stress activity</div>
+        </div>
+        <div class="stat-card" style="transition-delay:0.1s">
+          <div class="stat-card-number">4<span class="stat-card-unit">bpm</span></div>
+          <div class="stat-card-label" data-i18n="science.stat2">Lower heart rate during exposure</div>
+        </div>
+        <div class="stat-card" style="transition-delay:0.2s">
+          <div class="stat-card-number">8K</div>
+          <div class="stat-card-label" data-i18n="science.stat3">Resolution required for neural response</div>
+        </div>
+        <div class="stat-card" style="transition-delay:0.3s">
+          <div class="stat-card-number">24<span class="stat-card-unit">hr</span></div>
+          <div class="stat-card-label" data-i18n="science.stat4">Continuous sync loop for circadian benefit</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Products Section -->
+<section class="products-section" id="products">
+  <div class="section-eyebrow fade-up" data-i18n="products.eyebrow">Product Range</div>
+  <h2 class="section-title fade-up" data-i18n-html="products.title">One platform.<br><em>Every scale</em>.</h2>
+
+  <div class="products-grid">
+    <div class="product-card">
+      <div class="product-icon">▭</div>
+      <div class="product-name" data-i18n="products.single.name">Single Window</div>
+      <div class="product-desc" data-i18n="products.single.desc">The standard unit for hotel rooms and private offices. 65-inch Samsung commercial display, recessed frame, custom shutter panels, ambient audio.</div>
+      <div class="product-price">$2,500</div>
+      <div class="product-price-sub" data-i18n="products.single.sub">+ $20 / month optional subscription</div>
+      <ul class="product-features">
+        <li data-i18n="products.single.f1">65" Samsung QMC 24/7 Commercial Display</li>
+        <li data-i18n="products.single.f2">8K Content Library Included</li>
+        <li data-i18n="products.single.f3">Custom Wood or Aluminium Shutters</li>
+        <li data-i18n="products.single.f4">Ambient Audio System</li>
+        <li data-i18n="products.single.f5">MagicINFO Remote Management</li>
+      </ul>
+    </div>
+
+    <div class="product-card featured">
+      <div class="product-icon">▬</div>
+      <div class="product-name" data-i18n="products.double.name">Double Window</div>
+      <div class="product-desc" data-i18n="products.double.desc">For premium suites and executive spaces. Two synchronized units creating a panoramic view. Ideal for corner suites and VIP rooms.</div>
+      <div class="product-price">$4,500</div>
+      <div class="product-price-sub" data-i18n="products.double.sub">+ $35 / month optional subscription</div>
+      <ul class="product-features">
+        <li data-i18n="products.double.f1">2× 65" Synchronized Displays</li>
+        <li data-i18n="products.double.f2">Panoramic 8K Content</li>
+        <li data-i18n="products.double.f3">Premium Hardwood Frame</li>
+        <li data-i18n="products.double.f4">Spatial Audio System</li>
+        <li data-i18n="products.double.f5">Smart Calibration Across Both Screens</li>
+      </ul>
+    </div>
+
+    <div class="product-card">
+      <div class="product-icon">⬛</div>
+      <div class="product-name" data-i18n="products.wall.name">Full Wall View</div>
+      <div class="product-desc" data-i18n="products.wall.desc">For lobbies, hospital waiting rooms, and conference centres. Multi-screen video wall installation that transforms entire walls into immersive landscapes.</div>
+      <div class="product-price">POA</div>
+      <div class="product-price-sub" data-i18n="products.wall.sub">Custom quote based on installation</div>
+      <ul class="product-features">
+        <li data-i18n="products.wall.f1">3–12 Screen Video Wall</li>
+        <li data-i18n="products.wall.f2">Cinematic 8K Panoramic Content</li>
+        <li data-i18n="products.wall.f3">Custom Architectural Framing</li>
+        <li data-i18n="products.wall.f4">Full AV Integration</li>
+        <li data-i18n="products.wall.f5">On-site Installation & Commissioning</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing Section -->
+<section class="pricing-section" id="pricing">
+  <div class="section-eyebrow fade-up" data-i18n="pricing.eyebrow">Simple Pricing</div>
+  <h2 class="section-title fade-up" data-i18n-html="pricing.title">Everything included.<br><em>Nothing hidden</em>.</h2>
+
+  <div class="pricing-layout">
+    <div>
+      <div class="pricing-card highlighted">
+        <div class="pricing-tag" data-i18n="pricing.hw.tag">Hardware</div>
+        <div class="pricing-name" data-i18n="pricing.hw.name">Single Digital Window</div>
+        <div class="pricing-amount">$2,500</div>
+        <div class="pricing-period" data-i18n="pricing.hw.period">One-time investment per unit</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-items">
+          <li><span data-i18n="pricing.hw.i1">Display</span><span>65" Samsung QMC</span></li>
+          <li><span data-i18n="pricing.hw.i2">Warranty</span><span data-i18n="pricing.hw.i2v">1 Year Commercial</span></li>
+          <li><span data-i18n="pricing.hw.i3">Installation</span><span data-i18n="pricing.hw.i3v">Included</span></li>
+          <li><span data-i18n="pricing.hw.i4">Base Content</span><span data-i18n="pricing.hw.i4v">Included for Life</span></li>
+          <li><span data-i18n="pricing.hw.i5">Management</span><span>Samsung MagicINFO</span></li>
+        </ul>
+      </div>
+
+      <div class="pricing-card" style="margin-top:2px">
+        <div class="pricing-tag" data-i18n="pricing.sub.tag">Optional Subscription</div>
+        <div class="pricing-name" data-i18n="pricing.sub.name">Premium Content Access</div>
+        <div class="pricing-amount" style="font-size:48px">$20</div>
+        <div class="pricing-period" data-i18n="pricing.sub.period">Per unit per month — cancel anytime</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-items">
+          <li><span data-i18n="pricing.sub.i1">Live Feeds</span><span data-i18n="pricing.sub.i1v">Global Cameras</span></li>
+          <li><span data-i18n="pricing.sub.i2">New Views</span><span data-i18n="pricing.sub.i2v">Monthly Updates</span></li>
+          <li><span data-i18n="pricing.sub.i3">Seasonal Content</span><span data-i18n="pricing.sub.i3v">Ramadan & Hajj</span></li>
+          <li><span data-i18n="pricing.sub.i4">Priority Support</span><span data-i18n="pricing.sub.i4v">24/7</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div>
+      <div class="roi-block fade-up">
+        <div class="roi-title" data-i18n="roi.title">Your Return — 100 Room Hotel</div>
+        <div class="roi-calc">
+          <div class="roi-line"><span data-i18n="roi.investment">Total Investment (100 units)</span><span>$250,000</span></div>
+          <div class="roi-line"><span data-i18n="roi.rate">Room Rate Premium per Night</span><span>+$27 (100 SAR)</span></div>
+          <div class="roi-line"><span data-i18n="roi.occupancy">Annual Occupied Nights (70%)</span><span>25,550 nights</span></div>
+          <div class="roi-line"><span data-i18n="roi.revenue">Additional Annual Revenue</span><span>$690,000</span></div>
+          <div class="roi-line total"><span data-i18n="roi.payback">Payback Period</span><span>~4.3 months</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:32px;padding:32px;border:1px solid var(--border)">
+        <div class="roi-title" data-i18n="compare.title">Why Hotels Choose AuraViews</div>
+        <div class="roi-calc" style="margin-top:0">
+          <div class="roi-line"><span data-i18n="compare.them">Traditional digital signage</span><span style="color:var(--white-dim)">No wellness benefit</span></div>
+          <div class="roi-line"><span data-i18n="compare.us">AuraViews Digital Window</span><span style="color:var(--gold)">Stanford-backed wellness</span></div>
+          <div class="roi-line total"><span data-i18n="compare.saving">The Difference</span><span>Everything</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:32px;padding:32px;border:1px solid var(--border)">
+        <div class="roi-title" data-i18n="sub.title">Content Always Fresh — Optional Subscription</div>
+        <div class="roi-calc" style="margin-top:0">
+          <div class="roi-line"><span data-i18n="sub.100">Single window subscription</span><span>$20 / month</span></div>
+          <div class="roi-line"><span data-i18n="sub.1000">50 room hotel</span><span>$1,000 / month</span></div>
+          <div class="roi-line total"><span data-i18n="sub.10000">Cancel anytime — no contract</span><span>Always optional</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Product Banner -->
+<div style="
+  width:100%;
+  height:520px;
+  position:relative;
+  overflow:hidden;
+">
+  <img src="images/4.jpg" alt="AuraViews installed in luxury hotel room" style="
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    object-position:center 40%;
+    display:block;
+    filter:brightness(0.75);
+  ">
+  <div style="
+    position:absolute;
+    inset:0;
+    background:linear-gradient(to right, rgba(8,8,8,0.7) 0%, rgba(8,8,8,0.1) 50%, rgba(8,8,8,0.4) 100%);
+    display:flex;
+    align-items:center;
+    padding:0 80px;
+  ">
+    <div style="max-width:560px;">
+      <div style="
+        font-size:10px;
+        letter-spacing:0.4em;
+        text-transform:uppercase;
+        color:var(--gold);
+        margin-bottom:20px;
+        display:flex;
+        align-items:center;
+        gap:16px;
+      "><span style="display:block;width:30px;height:1px;background:var(--gold)"></span>Experience AuraViews</div>
+      <h2 style="
+        font-family:'Cormorant Garamond',serif;
+        font-size:clamp(36px,4vw,58px);
+        font-weight:300;
+        color:var(--white);
+        line-height:1.1;
+        margin-bottom:20px;
+      ">The room has not changed.<br><em style="color:var(--gold-light);font-style:italic;">Everything has.</em></h2>
+      <p style="
+        font-size:14px;
+        color:rgba(245,240,232,0.7);
+        line-height:1.8;
+        max-width:420px;
+      ">One unit. One wall. A complete transformation of how your guests feel from the moment they walk in.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Section -->
+<section class="contact-section" id="contact">
+  <div>
+    <div class="section-eyebrow fade-up" data-i18n="contact.eyebrow">Partnership Enquiry</div>
+    <h2 class="section-title fade-up" data-i18n-html="contact.title">Let us transform<br>your <em>property</em>.</h2>
+    <p class="section-body fade-up" data-i18n="contact.body">Whether you are a hotel developer, procurement manager, or interior designer, we would like to show you what AuraViews looks like in person. Request a demonstration or partnership discussion.</p>
+
+    <div class="contact-info">
+      <div class="contact-detail">
+        <div class="contact-detail-label" data-i18n="contact.base">Headquarters</div>
+        <div class="contact-detail-value">Riyadh, Saudi Arabia</div>
+      </div>
+      <div class="contact-detail">
+        <div class="contact-detail-label" data-i18n="contact.markets">Primary Markets</div>
+        <div class="contact-detail-value" data-i18n="contact.marketsVal">Makkah · Madinah · NEOM · Red Sea · Qiddiya</div>
+      </div>
+      <div class="contact-detail">
+        <div class="contact-detail-label" data-i18n="contact.events">Upcoming Events</div>
+        <div class="contact-detail-value">FHS Saudi Arabia — April 20–22, 2026 · Riyadh</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <form class="contact-form" onsubmit="return false">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" data-i18n="form.name">Full Name</label>
+          <input type="text" class="form-input" placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="form.company">Company</label>
+          <input type="text" class="form-input" placeholder="Hotel / Developer name">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" data-i18n="form.email">Email</label>
+          <input type="email" class="form-input" placeholder="your@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="form.rooms">Number of Rooms</label>
+          <select class="form-select">
+            <option data-i18n="form.rooms1">1 — 50 rooms</option>
+            <option data-i18n="form.rooms2">51 — 200 rooms</option>
+            <option data-i18n="form.rooms3">201 — 500 rooms</option>
+            <option data-i18n="form.rooms4">500+ rooms</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.interest">Interest</label>
+        <select class="form-select">
+          <option data-i18n="form.i1">Single Window Units</option>
+          <option data-i18n="form.i2">Full Hotel Fit-out</option>
+          <option data-i18n="form.i3">Lobby / Common Areas</option>
+          <option data-i18n="form.i4">Hospital / Healthcare</option>
+          <option data-i18n="form.i5">General Enquiry</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.message">Message</label>
+        <textarea class="form-textarea" placeholder="Tell us about your project..."></textarea>
+      </div>
+      <button type="submit" class="form-submit" data-i18n="form.submit">Send Enquiry →</button>
+    </form>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-logo">Aura<span>Views</span></div>
+  <div class="footer-copy">© 2026 AuraViews. All rights reserved.</div>
+  <ul class="footer-links">
+    <li><a href="#solution" data-i18n="nav.solution">Solution</a></li>
+    <li><a href="#science" data-i18n="nav.science">Science</a></li>
+    <li><a href="#contact" data-i18n="nav.contact">Contact</a></li>
+  </ul>
+</footer>
+
+<script>
+// Custom cursor
+const cursor = document.getElementById('cursor');
+const cursorRing = document.getElementById('cursorRing');
+let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  cursor.style.left = mouseX + 'px';
+  cursor.style.top = mouseY + 'px';
+});
+
+function animateRing() {
+  ringX += (mouseX - ringX) * 0.12;
+  ringY += (mouseY - ringY) * 0.12;
+  cursorRing.style.left = ringX + 'px';
+  cursorRing.style.top = ringY + 'px';
+  requestAnimationFrame(animateRing);
+}
+animateRing();
+
+document.querySelectorAll('a, button, input, select, textarea').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.width = '16px';
+    cursor.style.height = '16px';
+    cursorRing.style.width = '56px';
+    cursorRing.style.height = '56px';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.width = '8px';
+    cursor.style.height = '8px';
+    cursorRing.style.width = '36px';
+    cursorRing.style.height = '36px';
+  });
+});
+
+// Nav scroll
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNav').classList.toggle('scrolled', window.scrollY > 60);
+});
+
+// Shutter animation
+setTimeout(() => {
+  document.getElementById('shutterLeft').classList.add('open');
+  document.getElementById('shutterRight').classList.add('open');
+}, 1800);
+
+// Building grid
+const grid = document.getElementById('buildingGrid');
+const auraPositions = [7, 13, 19, 25, 31, 37];
+for (let i = 0; i < 48; i++) {
+  const cell = document.createElement('div');
+  cell.className = 'building-cell';
+  if (auraPositions.includes(i)) cell.classList.add('aura');
+  else if (Math.random() > 0.6) cell.classList.add('lit');
+  grid.appendChild(cell);
+}
+
+// Intersection Observer for animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.fade-up, .stat-item, .feature-item, .stat-card, .product-card').forEach(el => {
+  observer.observe(el);
+});
+
+// Translations
+const translations = {
+  en: {
+    'nav.solution': 'Solution',
+    'nav.science': 'Science',
+    'nav.products': 'Products',
+    'nav.pricing': 'Pricing',
+    'nav.contact': 'Contact',
+    'hero.eyebrow': 'Architectural Wellness Technology',
+    'hero.title': 'Every Room Deserves a <em>Window to the World</em>',
+    'hero.sub': 'Commercial-grade digital windows that transform windowless hotel rooms into scientifically-proven wellness experiences. Backed by Stanford University research.',
+    'hero.cta1': 'Request Partnership',
+    'hero.cta2': 'Discover More',
+    'hero.windowLabel': 'Masjid al-Haram — Makkah, 03:42',
+    'hero.scroll': 'Scroll',
+    'stats.rooms': 'Hotel Rooms — Target Market',
+    'stats.stress': 'Stress Reduction — Stanford Study',
+    'stats.price': 'Starting Price Per Unit',
+    'stats.content': 'Cinematic Content Resolution',
+    'problem.eyebrow': 'The Problem',
+    'problem.title': 'Millions of rooms.<br><em>Zero connection</em> to the outside world.',
+    'problem.body': 'Hotels in Makkah, Madinah, and dense urban centres build vertically. The result: thousands of interior rooms facing concrete walls or internal corridors. Guests paying premium rates deserve better. Architecture has no solution. AuraViews does.',
+    'problem.tag': 'Most hotel rooms have no view',
+    'solution.eyebrow': 'The Solution',
+    'solution.title': 'Not a screen.<br>A <em>window</em>.',
+    'features.depth.title': 'Architectural Depth Illusion',
+    'features.depth.desc': 'A recessed frame with architectural glass creates the visual depth your brain expects from a real window. The air gap between glass and screen is the secret.',
+    'features.sync.title': 'Circadian Synchronisation',
+    'features.sync.desc': 'Content is synchronized to your local time of day. Dawn at Fajr. Bright afternoon at Dhuhr. Golden hour at Maghrib. Your body knows the difference.',
+    'features.shutters.title': 'Signature Shutter Experience',
+    'features.shutters.desc': 'Custom panels in wood or aluminium open to reveal the view and trigger ambient audio. A physical ritual that primes the mind before the view is even seen.',
+    'features.manage.title': 'Smart Central Management',
+    'features.manage.desc': 'Samsung MagicINFO manages every screen in every room from a single dashboard. Push updates, monitor status, calibrate colour across 100 rooms in one click.',
+    'science.eyebrow': 'The Science',
+    'science.title': 'Your brain cannot tell<br>the <em>difference</em>.',
+    'science.body': 'The Zeitzer Circadian Research Lab at Stanford University conducted physiological studies measuring EEG, heart rate, blood pressure, and electrodermal activity while participants viewed digital windows in windowless rooms.',
+    'science.badge': 'Stanford University · Zeitzer Circadian Research Lab · Ongoing Study',
+    'science.quote': '"You look at the scene. You actually feel better. And it\'s not just a subjective thing. We\'re seeing changes in your biology that confirm both how you\'re feeling and how your body is responding."',
+    'science.quoteAttr': 'Dr. Jamie Zeitzer, Ph.D. — Associate Professor of Psychiatry, Stanford University',
+    'science.stat1': 'Reduction in electrodermal stress activity',
+    'science.stat2': 'Lower heart rate during exposure',
+    'science.stat3': 'Resolution required for neural response',
+    'science.stat4': 'Continuous sync loop for circadian benefit',
+    'products.eyebrow': 'Product Range',
+    'products.title': 'One platform.<br><em>Every scale</em>.',
+    'products.single.name': 'Single Window',
+    'products.single.desc': 'The standard unit for hotel rooms and private offices. 65-inch Samsung commercial display, recessed frame, custom shutter panels, ambient audio.',
+    'products.single.sub': '+ $20 / month optional subscription',
+    'products.single.f1': '65" Samsung QMC 24/7 Commercial Display',
+    'products.single.f2': '8K Content Library Included',
+    'products.single.f3': 'Custom Wood or Aluminium Shutters',
+    'products.single.f4': 'Ambient Audio System',
+    'products.single.f5': 'MagicINFO Remote Management',
+    'products.double.name': 'Double Window',
+    'products.double.desc': 'For premium suites and executive spaces. Two synchronized units creating a panoramic view.',
+    'products.double.sub': '+ $35 / month optional subscription',
+    'products.double.f1': '2× 65" Synchronized Displays',
+    'products.double.f2': 'Panoramic 8K Content',
+    'products.double.f3': 'Premium Hardwood Frame',
+    'products.double.f4': 'Spatial Audio System',
+    'products.double.f5': 'Smart Calibration Across Both Screens',
+    'products.wall.name': 'Full Wall View',
+    'products.wall.desc': 'For lobbies, hospital waiting rooms, and conference centres. Multi-screen video wall installations.',
+    'products.wall.sub': 'Custom quote based on installation',
+    'products.wall.f1': '3–12 Screen Video Wall',
+    'products.wall.f2': 'Cinematic 8K Panoramic Content',
+    'products.wall.f3': 'Custom Architectural Framing',
+    'products.wall.f4': 'Full AV Integration',
+    'products.wall.f5': 'On-site Installation & Commissioning',
+    'pricing.eyebrow': 'Simple Pricing',
+    'pricing.title': 'Everything included.<br><em>Nothing hidden</em>.',
+    'pricing.hw.tag': 'Hardware',
+    'pricing.hw.name': 'Single Digital Window',
+    'pricing.hw.period': 'One-time investment per unit',
+    'pricing.hw.i1': 'Display',
+    'pricing.hw.i2': 'Warranty',
+    'pricing.hw.i2v': '1 Year Commercial',
+    'pricing.hw.i3': 'Installation',
+    'pricing.hw.i3v': 'Included',
+    'pricing.hw.i4': 'Base Content',
+    'pricing.hw.i4v': 'Included for Life',
+    'pricing.hw.i5': 'Management',
+    'pricing.sub.tag': 'Optional Subscription',
+    'pricing.sub.name': 'Premium Content Access',
+    'pricing.sub.period': 'Per unit per month — cancel anytime',
+    'pricing.sub.i1': 'Live Feeds',
+    'pricing.sub.i1v': 'Global Cameras',
+    'pricing.sub.i2': 'New Views',
+    'pricing.sub.i2v': 'Monthly Updates',
+    'pricing.sub.i3': 'Seasonal Content',
+    'pricing.sub.i3v': 'Ramadan & Hajj',
+    'pricing.sub.i4': 'Priority Support',
+    'pricing.sub.i4v': '24/7',
+    'roi.title': 'ROI Calculator — 100 Room Hotel',
+    'roi.investment': 'Total Investment (100 units)',
+    'roi.rate': 'Room Rate Premium per Night',
+    'roi.occupancy': 'Annual Occupied Nights (70%)',
+    'roi.revenue': 'Additional Annual Revenue',
+    'roi.payback': 'Payback Period',
+    'compare.title': 'Why Hotels Choose AuraViews',
+    'compare.them': 'Traditional digital signage',
+    'compare.us': 'AuraViews Digital Window',
+    'compare.saving': 'The Difference',
+    'sub.title': 'Content Always Fresh — Optional Subscription',
+    'sub.100': '100 subscribed units',
+    'sub.1000': '1,000 subscribed units',
+    'sub.10000': '10,000 units (Makkah alone)',
+    'contact.eyebrow': 'Partnership Enquiry',
+    'contact.title': 'Let us transform<br>your <em>property</em>.',
+    'contact.body': 'Whether you are a hotel developer, procurement manager, or interior designer, we would like to show you what AuraViews looks like in person.',
+    'contact.base': 'Headquarters',
+    'contact.markets': 'Primary Markets',
+    'contact.marketsVal': 'Makkah · Madinah · NEOM · Red Sea · Qiddiya',
+    'contact.events': 'Upcoming Events',
+    'form.name': 'Full Name',
+    'form.company': 'Company',
+    'form.email': 'Email',
+    'form.rooms': 'Number of Rooms',
+    'form.rooms1': '1 — 50 rooms',
+    'form.rooms2': '51 — 200 rooms',
+    'form.rooms3': '201 — 500 rooms',
+    'form.rooms4': '500+ rooms',
+    'form.interest': 'Interest',
+    'form.i1': 'Single Window Units',
+    'form.i2': 'Full Hotel Fit-out',
+    'form.i3': 'Lobby / Common Areas',
+    'form.i4': 'Hospital / Healthcare',
+    'form.i5': 'General Enquiry',
+    'form.message': 'Message',
+    'form.submit': 'Send Enquiry →',
+  },
+  ar: {
+    'nav.solution': 'الحل',
+    'nav.science': 'العلم',
+    'nav.products': 'المنتجات',
+    'nav.pricing': 'الأسعار',
+    'nav.contact': 'تواصل',
+    'hero.eyebrow': 'تقنية الرفاهية المعمارية',
+    'hero.title': 'كل غرفة تستحق <em>نافذة على العالم</em>',
+    'hero.sub': 'نوافذ رقمية تجارية تحوّل الغرف الفندقية المغلقة إلى تجارب صحية مثبتة علمياً. مدعومة ببحوث جامعة ستانفورد.',
+    'hero.cta1': 'طلب شراكة',
+    'hero.cta2': 'اكتشف المزيد',
+    'hero.windowLabel': 'المسجد الحرام — مكة المكرمة، 03:42',
+    'hero.scroll': 'تمرير',
+    'stats.rooms': 'غرفة فندقية — السوق المستهدف',
+    'stats.stress': 'خفض التوتر — دراسة ستانفورد',
+    'stats.price': 'السعر الابتدائي للوحدة',
+    'stats.content': 'دقة المحتوى السينمائي',
+    'problem.eyebrow': 'المشكلة',
+    'problem.title': 'ملايين الغرف.<br><em>لا اتصال</em> بالعالم الخارجي.',
+    'problem.body': 'تُبنى الفنادق في مكة المكرمة والمدينة المنورة والمراكز الحضرية عمودياً. النتيجة: آلاف الغرف الداخلية تواجه جدراناً خرسانية. AuraViews هو الحل.',
+    'problem.tag': 'معظم الغرف الفندقية بلا إطلالة',
+    'solution.eyebrow': 'الحل',
+    'solution.title': 'ليست شاشة.<br>إنها <em>نافذة</em>.',
+    'features.depth.title': 'وهم العمق المعماري',
+    'features.depth.desc': 'إطار غائر مع زجاج معماري يخلق العمق البصري الذي يتوقعه دماغك من نافذة حقيقية.',
+    'features.sync.title': 'مزامنة الإيقاع اليومي',
+    'features.sync.desc': 'المحتوى متزامن مع الوقت المحلي. فجر عند الفجر. ظهر مشرق. ساعة ذهبية عند المغرب.',
+    'features.shutters.title': 'تجربة المصاريع المميزة',
+    'features.shutters.desc': 'ألواح مخصصة من الخشب أو الألومنيوم تفتح لتكشف المشهد وتشغّل الصوت المحيطي.',
+    'features.manage.title': 'إدارة مركزية ذكية',
+    'features.manage.desc': 'Samsung MagicINFO يدير كل شاشة في كل غرفة من لوحة تحكم واحدة.',
+    'science.eyebrow': 'العلم',
+    'science.title': 'دماغك لا يستطيع<br>تمييز <em>الفرق</em>.',
+    'science.body': 'أجرى مختبر Zeitzer للبحوث الإيقاعية في جامعة ستانفورد دراسات فسيولوجية قاست موجات الدماغ ومعدل ضربات القلب وضغط الدم أثناء مشاهدة النوافذ الرقمية.',
+    'science.badge': 'جامعة ستانفورد · مختبر Zeitzer للبحوث الإيقاعية · دراسة جارية',
+    'science.quote': '"تنظر إلى المشهد. تشعر بتحسن فعلي. وهذا ليس أمراً ذاتياً فحسب. نرى تغييرات في علم الأحياء لديك تؤكد ما تشعر به."',
+    'science.quoteAttr': 'د. جيمي زيتسر، دكتوراه — أستاذ مشارك في الطب النفسي، جامعة ستانفورد',
+    'science.stat1': 'انخفاض في النشاط الجلدي الكهربائي',
+    'science.stat2': 'انخفاض معدل ضربات القلب',
+    'science.stat3': 'الدقة اللازمة للاستجابة العصبية',
+    'science.stat4': 'حلقة مزامنة مستمرة',
+    'products.eyebrow': 'نطاق المنتجات',
+    'products.title': 'منصة واحدة.<br><em>كل المقاسات</em>.',
+    'products.single.name': 'نافذة واحدة',
+    'products.single.desc': 'الوحدة القياسية للغرف الفندقية والمكاتب. شاشة Samsung تجارية 65 بوصة، إطار غائر، ألواح مصاريع مخصصة.',
+    'products.single.sub': '+ $20 / شهر (اشتراك اختياري)',
+    'products.single.f1': 'Samsung QMC 65" معتمدة 24/7',
+    'products.single.f2': 'مكتبة محتوى 8K مضمنة',
+    'products.single.f3': 'مصاريع خشبية أو ألومنيوم مخصصة',
+    'products.single.f4': 'نظام صوت محيطي',
+    'products.single.f5': 'إدارة عن بعد MagicINFO',
+    'products.double.name': 'نافذة مزدوجة',
+    'products.double.desc': 'للأجنحة المميزة والمكاتب التنفيذية. وحدتان متزامنتان تخلقان إطلالة بانورامية.',
+    'products.double.sub': '+ $35 / شهر (اشتراك اختياري)',
+    'products.double.f1': '2× شاشة 65" متزامنة',
+    'products.double.f2': 'محتوى بانورامي 8K',
+    'products.double.f3': 'إطار خشب فاخر',
+    'products.double.f4': 'نظام صوت مكاني',
+    'products.double.f5': 'معايرة ذكية عبر الشاشتين',
+    'products.wall.name': 'جدار كامل',
+    'products.wall.desc': 'للردهات وغرف انتظار المستشفيات وقاعات المؤتمرات. تركيبات جدار فيديو متعددة الشاشات.',
+    'products.wall.sub': 'سعر مخصص حسب التركيب',
+    'products.wall.f1': 'جدار فيديو 3-12 شاشة',
+    'products.wall.f2': 'محتوى بانورامي سينمائي 8K',
+    'products.wall.f3': 'إطار معماري مخصص',
+    'products.wall.f4': 'تكامل AV كامل',
+    'products.wall.f5': 'تركيب وتشغيل في الموقع',
+    'pricing.eyebrow': 'أسعار بسيطة',
+    'pricing.title': 'كل شيء مشمول.<br><em>لا شيء مخفي</em>.',
+    'pricing.hw.tag': 'الأجهزة',
+    'pricing.hw.name': 'نافذة رقمية واحدة',
+    'pricing.hw.period': 'استثمار لمرة واحدة لكل وحدة',
+    'pricing.hw.i1': 'الشاشة',
+    'pricing.hw.i2': 'الضمان',
+    'pricing.hw.i2v': 'سنة تجارية',
+    'pricing.hw.i3': 'التركيب',
+    'pricing.hw.i3v': 'مشمول',
+    'pricing.hw.i4': 'المحتوى الأساسي',
+    'pricing.hw.i4v': 'مشمول مدى الحياة',
+    'pricing.hw.i5': 'الإدارة',
+    'pricing.sub.tag': 'اشتراك اختياري',
+    'pricing.sub.name': 'الوصول إلى المحتوى المميز',
+    'pricing.sub.period': 'لكل وحدة شهرياً — إلغاء في أي وقت',
+    'pricing.sub.i1': 'بث مباشر',
+    'pricing.sub.i1v': 'كاميرات عالمية',
+    'pricing.sub.i2': 'مشاهد جديدة',
+    'pricing.sub.i2v': 'تحديثات شهرية',
+    'pricing.sub.i3': 'محتوى موسمي',
+    'pricing.sub.i3v': 'رمضان والحج',
+    'pricing.sub.i4': 'دعم أولوية',
+    'pricing.sub.i4v': '24/7',
+    'roi.title': 'حاسبة العائد — فندق 100 غرفة',
+    'roi.investment': 'إجمالي الاستثمار (100 وحدة)',
+    'roi.rate': 'علاوة سعر الغرفة في الليلة',
+    'roi.occupancy': 'الليالي السنوية المشغولة (70%)',
+    'roi.revenue': 'الإيرادات السنوية الإضافية',
+    'roi.payback': 'فترة الاسترداد',
+    'compare.title': 'لماذا تختار الفنادق AuraViews',
+    'compare.them': 'اللافتات الرقمية التقليدية',
+    'compare.us': 'نافذة AuraViews الرقمية',
+    'compare.saving': 'الفرق',
+    'sub.title': 'إيرادات الاشتراك على نطاق واسع',
+    'sub.100': '100 وحدة مشتركة',
+    'sub.1000': '1,000 وحدة مشتركة',
+    'sub.10000': '10,000 وحدة (مكة وحدها)',
+    'contact.eyebrow': 'استفسار شراكة',
+    'contact.title': 'دعنا نحوّل<br><em>عقارك</em>.',
+    'contact.body': 'سواء كنت مطور فنادق أو مدير مشتريات أو مصمم داخلي، نودّ أن نريك AuraViews شخصياً.',
+    'contact.base': 'المقر الرئيسي',
+    'contact.markets': 'الأسواق الرئيسية',
+    'contact.marketsVal': 'مكة المكرمة · المدينة المنورة · نيوم · البحر الأحمر · القدية',
+    'contact.events': 'الفعاليات القادمة',
+    'form.name': 'الاسم الكامل',
+    'form.company': 'الشركة',
+    'form.email': 'البريد الإلكتروني',
+    'form.rooms': 'عدد الغرف',
+    'form.rooms1': '1 — 50 غرفة',
+    'form.rooms2': '51 — 200 غرفة',
+    'form.rooms3': '201 — 500 غرفة',
+    'form.rooms4': '500+ غرفة',
+    'form.interest': 'الاهتمام',
+    'form.i1': 'وحدات نافذة واحدة',
+    'form.i2': 'تجهيز فندق كامل',
+    'form.i3': 'الردهات / المناطق المشتركة',
+    'form.i4': 'مستشفى / رعاية صحية',
+    'form.i5': 'استفسار عام',
+    'form.message': 'الرسالة',
+    'form.submit': 'إرسال الاستفسار ←',
+  },
+  de: {
+    'nav.solution': 'Lösung',
+    'nav.science': 'Wissenschaft',
+    'nav.products': 'Produkte',
+    'nav.pricing': 'Preise',
+    'nav.contact': 'Kontakt',
+    'hero.eyebrow': 'Architektonische Wellness-Technologie',
+    'hero.title': 'Jedes Zimmer verdient ein <em>Fenster zur Welt</em>',
+    'hero.sub': 'Kommerzielle digitale Fenster, die fensterlose Hotelzimmer in wissenschaftlich bewiesene Wellness-Erlebnisse verwandeln.',
+    'hero.cta1': 'Partnerschaft anfragen',
+    'hero.cta2': 'Mehr entdecken',
+    'hero.windowLabel': 'Masjid al-Haram — Mekka, 03:42',
+    'hero.scroll': 'Scrollen',
+    'stats.rooms': 'Hotelzimmer — Zielmarkt',
+    'stats.stress': 'Stressreduktion — Stanford-Studie',
+    'stats.price': 'Startpreis pro Einheit',
+    'stats.content': 'Filmische Inhaltsauflösung',
+    'problem.eyebrow': 'Das Problem',
+    'problem.title': 'Millionen von Zimmern.<br><em>Keine Verbindung</em> zur Außenwelt.',
+    'problem.body': 'Hotels in Mekka, Medina und dichten Städten bauen vertikal. Das Ergebnis: Tausende von Innenräumen ohne Ausblick. AuraViews hat die Lösung.',
+    'problem.tag': 'Die meisten Hotelzimmer haben keine Aussicht',
+    'solution.eyebrow': 'Die Lösung',
+    'solution.title': 'Kein Bildschirm.<br>Ein <em>Fenster</em>.',
+    'science.eyebrow': 'Die Wissenschaft',
+    'science.title': 'Ihr Gehirn kann den<br><em>Unterschied</em> nicht erkennen.',
+    'science.quote': '"Sie schauen auf die Szene. Sie fühlen sich tatsächlich besser. Und das ist nicht nur subjektiv. Wir sehen biologische Veränderungen, die bestätigen, wie Ihr Körper reagiert."',
+    'science.quoteAttr': 'Dr. Jamie Zeitzer, Ph.D. — Außerordentlicher Professor für Psychiatrie, Stanford University',
+    'pricing.eyebrow': 'Einfache Preise',
+    'pricing.title': 'Alles inklusive.<br><em>Keine versteckten Kosten</em>.',
+    'contact.eyebrow': 'Partnerschaftsanfrage',
+    'contact.title': 'Lassen Sie uns Ihr<br><em>Objekt</em> transformieren.',
+    'form.submit': 'Anfrage senden →',
+  },
+  fr: {
+    'nav.solution': 'Solution', 'nav.science': 'Science', 'nav.products': 'Produits', 'nav.pricing': 'Tarifs', 'nav.contact': 'Contact',
+    'hero.eyebrow': 'Technologie de Bien-être Architectural',
+    'hero.title': 'Chaque chambre mérite une <em>fenêtre sur le monde</em>',
+    'hero.sub': 'Fenêtres numériques commerciales qui transforment les chambres d\'hôtel sans fenêtre en expériences de bien-être prouvées scientifiquement. Soutenu par la recherche de l\'Université Stanford.',
+    'hero.cta1': 'Demander un partenariat', 'hero.cta2': 'Découvrir plus',
+    'hero.windowLabel': 'Masjid al-Haram — La Mecque, 03:42', 'hero.scroll': 'Défiler',
+    'stats.rooms': 'Chambres d\'hôtel — Marché cible', 'stats.stress': 'Réduction du stress — Étude Stanford', 'stats.price': 'Prix de départ par unité', 'stats.content': 'Résolution cinématographique',
+    'problem.eyebrow': 'Le Problème',
+    'problem.title': 'Des millions de chambres.<br><em>Zéro connexion</em> avec le monde extérieur.',
+    'problem.body': 'Les hôtels à La Mecque, Médine et dans les centres urbains denses construisent verticalement. Des milliers de chambres intérieures font face à des murs en béton. Les clients méritent mieux. L\'architecture n\'a pas de solution. AuraViews, oui.',
+    'problem.tag': 'La plupart des chambres n\'ont pas de vue',
+    'solution.eyebrow': 'La Solution', 'solution.title': 'Pas un écran.<br>Une <em>fenêtre</em>.',
+    'features.depth.title': 'Illusion de profondeur architecturale', 'features.depth.desc': 'Un cadre encastré avec un verre architectural crée la profondeur visuelle qu\'attend votre cerveau d\'une vraie fenêtre. L\'espace d\'air entre le verre et l\'écran est le secret.',
+    'features.sync.title': 'Synchronisation circadienne', 'features.sync.desc': 'Le contenu est synchronisé sur l\'heure locale. Aube au Fajr. Après-midi lumineux au Dhuhr. Heure dorée au Maghrib. Votre corps fait la différence.',
+    'features.shutters.title': 'Expérience volets signature', 'features.shutters.desc': 'Des panneaux personnalisés en bois ou aluminium s\'ouvrent pour révéler la vue et déclencher un son ambiant. Un rituel physique qui prépare l\'esprit.',
+    'features.manage.title': 'Gestion centrale intelligente', 'features.manage.desc': 'Samsung MagicINFO gère chaque écran dans chaque chambre depuis un tableau de bord unique. Mises à jour, surveillance, calibration en un clic.',
+    'science.eyebrow': 'La Science', 'science.title': 'Votre cerveau ne peut pas<br>voir la <em>différence</em>.',
+    'science.body': 'Le laboratoire de recherche circadienne Zeitzer à l\'Université Stanford a mené des études physiologiques mesurant l\'EEG, la fréquence cardiaque, la tension artérielle et l\'activité électrodermale.',
+    'science.badge': 'Université Stanford · Laboratoire Zeitzer · Étude en cours',
+    'science.quote': '"Vous regardez la scène. Vous vous sentez vraiment mieux. Ce n\'est pas seulement subjectif. Nous voyons des changements biologiques qui confirment ce que vous ressentez."',
+    'science.quoteAttr': 'Dr. Jamie Zeitzer, Ph.D. — Professeur Associé de Psychiatrie, Université Stanford',
+    'science.stat1': 'Réduction de l\'activité de stress électrodermale', 'science.stat2': 'Fréquence cardiaque réduite', 'science.stat3': 'Résolution pour réponse neurale', 'science.stat4': 'Boucle de synchronisation continue',
+    'products.eyebrow': 'Gamme de produits', 'products.title': 'Une plateforme.<br><em>Toutes les tailles</em>.',
+    'products.single.name': 'Fenêtre unique', 'products.single.desc': 'L\'unité standard pour les chambres d\'hôtel et bureaux privés. Écran Samsung commercial 65 pouces, cadre encastré, volets personnalisés, son ambiant.',
+    'products.single.sub': '+ 20$ / mois abonnement optionnel',
+    'products.single.f1': 'Samsung QMC 65" certifié 24/7', 'products.single.f2': 'Bibliothèque de contenu 8K incluse', 'products.single.f3': 'Volets bois ou aluminium sur mesure', 'products.single.f4': 'Système audio ambiant', 'products.single.f5': 'Gestion à distance MagicINFO',
+    'products.double.name': 'Fenêtre double', 'products.double.desc': 'Pour les suites premium et espaces exécutifs. Deux unités synchronisées créant une vue panoramique.',
+    'products.double.sub': '+ 35$ / mois abonnement optionnel',
+    'products.double.f1': '2× écrans 65" synchronisés', 'products.double.f2': 'Contenu panoramique 8K', 'products.double.f3': 'Cadre en bois massif premium', 'products.double.f4': 'Système audio spatial', 'products.double.f5': 'Calibration intelligente sur les deux écrans',
+    'products.wall.name': 'Mur complet', 'products.wall.desc': 'Pour les halls, salles d\'attente et salles de conférence. Installations multi-écrans qui transforment des murs entiers.',
+    'products.wall.sub': 'Devis personnalisé selon installation',
+    'products.wall.f1': 'Mur vidéo 3–12 écrans', 'products.wall.f2': 'Contenu panoramique cinématographique 8K', 'products.wall.f3': 'Cadrage architectural sur mesure', 'products.wall.f4': 'Intégration AV complète', 'products.wall.f5': 'Installation et mise en service sur site',
+    'pricing.eyebrow': 'Tarification simple', 'pricing.title': 'Tout inclus.<br><em>Rien de caché</em>.',
+    'pricing.hw.tag': 'Matériel', 'pricing.hw.name': 'Fenêtre numérique unique', 'pricing.hw.period': 'Investissement unique par unité',
+    'pricing.hw.i1': 'Écran', 'pricing.hw.i2': 'Garantie', 'pricing.hw.i2v': '1 an commercial', 'pricing.hw.i3': 'Installation', 'pricing.hw.i3v': 'Incluse', 'pricing.hw.i4': 'Contenu de base', 'pricing.hw.i4v': 'Inclus à vie', 'pricing.hw.i5': 'Gestion',
+    'pricing.sub.tag': 'Abonnement optionnel', 'pricing.sub.name': 'Accès au contenu premium', 'pricing.sub.period': 'Par unité par mois — annulation à tout moment',
+    'pricing.sub.i1': 'Flux en direct', 'pricing.sub.i1v': 'Caméras mondiales', 'pricing.sub.i2': 'Nouvelles vues', 'pricing.sub.i2v': 'Mises à jour mensuelles', 'pricing.sub.i3': 'Contenu saisonnier', 'pricing.sub.i3v': 'Ramadan et Hajj', 'pricing.sub.i4': 'Support prioritaire', 'pricing.sub.i4v': '24/7',
+    'roi.title': 'Votre retour — Hôtel 100 chambres', 'roi.investment': 'Investissement total (100 unités)', 'roi.rate': 'Prime de tarif par nuit', 'roi.occupancy': 'Nuits occupées annuelles (70%)', 'roi.revenue': 'Revenus annuels supplémentaires', 'roi.payback': 'Période de remboursement',
+    'compare.title': 'Pourquoi les hôtels choisissent AuraViews', 'compare.them': 'Signalétique numérique traditionnelle', 'compare.us': 'Fenêtre numérique AuraViews', 'compare.saving': 'La différence',
+    'sub.title': 'Contenu toujours frais — Abonnement optionnel', 'sub.100': 'Abonnement fenêtre unique', 'sub.1000': 'Hôtel 50 chambres', 'sub.10000': 'Annulation à tout moment — sans contrat',
+    'contact.eyebrow': 'Demande de partenariat', 'contact.title': 'Laissez-nous transformer<br>votre <em>propriété</em>.',
+    'contact.body': 'Que vous soyez promoteur hôtelier, responsable des achats ou designer d\'intérieur, nous souhaitons vous montrer AuraViews en personne.',
+    'contact.base': 'Siège social', 'contact.markets': 'Marchés principaux', 'contact.marketsVal': 'La Mecque · Médine · NEOM · Mer Rouge · Qiddiya', 'contact.events': 'Événements à venir',
+    'form.name': 'Nom complet', 'form.company': 'Entreprise', 'form.email': 'E-mail', 'form.rooms': 'Nombre de chambres',
+    'form.rooms1': '1 — 50 chambres', 'form.rooms2': '51 — 200 chambres', 'form.rooms3': '201 — 500 chambres', 'form.rooms4': '500+ chambres',
+    'form.interest': 'Intérêt', 'form.i1': 'Unités fenêtre unique', 'form.i2': 'Aménagement complet d\'hôtel', 'form.i3': 'Hall / Espaces communs', 'form.i4': 'Hôpital / Santé', 'form.i5': 'Renseignement général',
+    'form.message': 'Message', 'form.submit': 'Envoyer la demande →',
+  },
+  zh: {
+    'nav.solution': '解决方案', 'nav.science': '科学', 'nav.products': '产品', 'nav.pricing': '定价', 'nav.contact': '联系',
+    'hero.eyebrow': '建筑健康技术',
+    'hero.title': '每个房间都值得拥有<em>通向世界的窗户</em>',
+    'hero.sub': '商业级数字窗户，将无窗酒店客房转变为经科学证实的健康体验。由斯坦福大学研究支持。',
+    'hero.cta1': '申请合作', 'hero.cta2': '了解更多',
+    'hero.windowLabel': '麦加禁寺 — 03:42', 'hero.scroll': '向下滚动',
+    'stats.rooms': '目标市场酒店客房', 'stats.stress': '压力减少 — 斯坦福研究', 'stats.price': '每台起始价格', 'stats.content': '电影级内容分辨率',
+    'problem.eyebrow': '问题所在',
+    'problem.title': '数百万个房间。<br><em>与外界零连接</em>。',
+    'problem.body': '麦加、麦地那和密集城市中心的酒店垂直建造，导致数千个内部客房面对混凝土墙壁。支付高价的客人理应获得更好的体验。传统建筑无法解决这一问题。AuraViews可以。',
+    'problem.tag': '大多数酒店客房没有景观',
+    'solution.eyebrow': '解决方案', 'solution.title': '不是屏幕。<br>是<em>窗户</em>。',
+    'features.depth.title': '建筑深度幻觉', 'features.depth.desc': '内嵌框架配合建筑玻璃，创造您的大脑对真实窗户所期待的视觉深度。玻璃与屏幕之间的空气间隙是关键所在。',
+    'features.sync.title': '昼夜节律同步', 'features.sync.desc': '内容与当地时间同步。晨礼时的黎明。晌礼时的明亮下午。昏礼时的黄金时刻。您的身体感受得到差异。',
+    'features.shutters.title': '标志性百叶窗体验', 'features.shutters.desc': '木质或铝制定制面板开启，呈现景观并触发环境音效。一种在看到景色之前就已调动心绪的仪式感。',
+    'features.manage.title': '智能集中管理', 'features.manage.desc': 'Samsung MagicINFO通过单一仪表板管理每个房间的每块屏幕。一键推送更新、监控状态、校准100个房间的色彩。',
+    'science.eyebrow': '科学依据', 'science.title': '您的大脑无法<br>分辨<em>差异</em>。',
+    'science.body': '斯坦福大学Zeitzer昼夜节律研究实验室进行了生理学研究，测量了参与者在无窗房间中观看数字窗户时的脑电图、心率、血压和皮肤电活动。',
+    'science.badge': '斯坦福大学 · Zeitzer昼夜节律研究实验室 · 持续研究中',
+    'science.quote': '"您看着场景，您真的感觉更好了。这不仅仅是主观感受。我们看到了您生理上的变化，证实了您的感受以及您的身体如何响应。"',
+    'science.quoteAttr': 'Dr. Jamie Zeitzer, Ph.D. — 斯坦福大学精神病学副教授',
+    'science.stat1': '皮肤电压力活动降低', 'science.stat2': '心率降低', 'science.stat3': '神经响应所需分辨率', 'science.stat4': '连续昼夜同步循环',
+    'products.eyebrow': '产品系列', 'products.title': '一个平台。<br><em>适合各种规模</em>。',
+    'products.single.name': '单窗', 'products.single.desc': '酒店客房和私人办公室的标准配置。65英寸三星商业显示屏、内嵌框架、定制百叶窗面板、环境音效。',
+    'products.single.sub': '+ 每月20美元（可选订阅）',
+    'products.single.f1': '三星QMC 65英寸 24/7认证商用显示屏', 'products.single.f2': '含8K内容库', 'products.single.f3': '定制木质或铝制百叶窗', 'products.single.f4': '环境音效系统', 'products.single.f5': 'MagicINFO远程管理',
+    'products.double.name': '双窗', 'products.double.desc': '适用于高级套房和行政空间。两个同步单元创造全景视野。',
+    'products.double.sub': '+ 每月35美元（可选订阅）',
+    'products.double.f1': '2× 65英寸同步显示屏', 'products.double.f2': '全景8K内容', 'products.double.f3': '高级实木框架', 'products.double.f4': '空间音频系统', 'products.double.f5': '双屏智能色彩校准',
+    'products.wall.name': '整墙视图', 'products.wall.desc': '适用于大堂、医院候诊室和会议中心。多屏视频墙装置，将整面墙壁变为沉浸式景观。',
+    'products.wall.sub': '根据安装情况定制报价',
+    'products.wall.f1': '3至12屏视频墙', 'products.wall.f2': '电影级8K全景内容', 'products.wall.f3': '定制建筑框架', 'products.wall.f4': '完整AV集成', 'products.wall.f5': '现场安装与调试',
+    'pricing.eyebrow': '简单定价', 'pricing.title': '全部包含。<br><em>没有隐藏费用</em>。',
+    'pricing.hw.tag': '硬件', 'pricing.hw.name': '单个数字窗户', 'pricing.hw.period': '每台一次性投资',
+    'pricing.hw.i1': '显示屏', 'pricing.hw.i2': '保修', 'pricing.hw.i2v': '1年商业保修', 'pricing.hw.i3': '安装', 'pricing.hw.i3v': '已包含', 'pricing.hw.i4': '基础内容', 'pricing.hw.i4v': '终身包含', 'pricing.hw.i5': '管理系统',
+    'pricing.sub.tag': '可选订阅', 'pricing.sub.name': '高级内容访问', 'pricing.sub.period': '每台每月 — 随时取消',
+    'pricing.sub.i1': '实时直播', 'pricing.sub.i1v': '全球摄像头', 'pricing.sub.i2': '新景观', 'pricing.sub.i2v': '每月更新', 'pricing.sub.i3': '季节性内容', 'pricing.sub.i3v': '斋月与朝觐', 'pricing.sub.i4': '优先支持', 'pricing.sub.i4v': '全天候',
+    'roi.title': '您的回报 — 100间客房酒店', 'roi.investment': '总投资（100台）', 'roi.rate': '每晚客房加价', 'roi.occupancy': '年入住夜数（70%）', 'roi.revenue': '额外年收入', 'roi.payback': '回收周期',
+    'compare.title': '为什么酒店选择AuraViews', 'compare.them': '传统数字标牌', 'compare.us': 'AuraViews数字窗户', 'compare.saving': '差异所在',
+    'sub.title': '内容始终新鲜 — 可选订阅', 'sub.100': '单窗订阅', 'sub.1000': '50间客房酒店', 'sub.10000': '随时取消 — 无合同',
+    'contact.eyebrow': '合作咨询', 'contact.title': '让我们改造<br>您的<em>物业</em>。',
+    'contact.body': '无论您是酒店开发商、采购经理还是室内设计师，我们都希望亲自向您展示AuraViews的效果。',
+    'contact.base': '总部', 'contact.markets': '主要市场', 'contact.marketsVal': '麦加 · 麦地那 · 新未来城 · 红海 · 吉迪亚', 'contact.events': '即将举行的活动',
+    'form.name': '全名', 'form.company': '公司', 'form.email': '电子邮件', 'form.rooms': '客房数量',
+    'form.rooms1': '1 — 50间', 'form.rooms2': '51 — 200间', 'form.rooms3': '201 — 500间', 'form.rooms4': '500间以上',
+    'form.interest': '感兴趣的内容', 'form.i1': '单窗单元', 'form.i2': '整体酒店装修', 'form.i3': '大堂/公共区域', 'form.i4': '医院/医疗保健', 'form.i5': '一般咨询',
+    'form.message': '留言', 'form.submit': '发送咨询 →',
+  }
+};
+
+let currentLang = 'en';
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    if (btn.textContent.trim().toLowerCase() === lang ||
+        (lang === 'zh' && btn.textContent.trim() === '中文')) {
+      btn.classList.add('active');
+    }
+  });
+
+  const t = translations[lang] || translations['en'];
+  const en = translations['en'];
+
+  // Apply RTL for Arabic
+  document.body.classList.toggle('rtl', lang === 'ar');
+  document.body.classList.toggle('noto-arabic', lang === 'ar');
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t[key] || en[key] || el.textContent;
+  });
+
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.getAttribute('data-i18n-html');
+    el.innerHTML = t[key] || en[key] || el.innerHTML;
+  });
+}
+
+// Animate stats counter
+function animateCounter(el, target, suffix = '') {
+  let start = 0;
+  const duration = 1500;
+  const step = (timestamp) => {
+    if (!start) start = timestamp;
+    const progress = Math.min((timestamp - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.floor(eased * target);
+    el.textContent = current.toLocaleString() + suffix;
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// Observe stat items for counter animation
+const statObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      statObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+
+document.querySelectorAll('.stat-item').forEach(el => statObserver.observe(el));
+</script>
+</body>
+</html>
